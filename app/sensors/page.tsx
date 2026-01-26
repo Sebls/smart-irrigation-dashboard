@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { DashboardLayout } from "@/layouts/dashboard/dashboard-layout"
 import { mockZones } from "@/lib/mock-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -54,12 +54,10 @@ export default function SensorsPage() {
     allSensors.reduce((acc, s) => acc + s.humidity, 0) / (allSensors.length || 1)
   )
 
-  // Generate comparison chart data
+  // Generate deterministic comparison chart labels (avoid server/client clock drift)
   const comparisonData = Array.from({ length: 24 }, (_, i) => {
-    const hour = new Date()
-    hour.setHours(hour.getHours() - 23 + i)
     const data: Record<string, number | string> = {
-      time: hour.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+      time: `${i.toString().padStart(2, "0")}:00`,
     }
     allSensors.slice(0, 5).forEach((sensor, idx) => {
       const reading = sensor.readings[i]

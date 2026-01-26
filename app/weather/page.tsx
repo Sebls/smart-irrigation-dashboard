@@ -1,6 +1,6 @@
 "use client"
 
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { DashboardLayout } from "@/layouts/dashboard/dashboard-layout"
 import { mockWeather, mockZones } from "@/lib/mock-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -35,7 +35,7 @@ export default function WeatherPage() {
   const CurrentIcon = weatherIcons[mockWeather.condition]
 
   const forecastData = mockWeather.forecast.map((day) => ({
-    day: day.date.toLocaleDateString("en-US", { weekday: "short" }),
+    day: day.date.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }),
     high: day.high,
     low: day.low,
     precipitation: day.precipitation,
@@ -44,12 +44,10 @@ export default function WeatherPage() {
 
   // Simulated hourly temperature data
   const hourlyTempData = Array.from({ length: 24 }, (_, i) => {
-    const hour = new Date()
-    hour.setHours(i)
     const baseTemp = mockWeather.temperature
     const variation = Math.sin((i - 6) * (Math.PI / 12)) * 6
     return {
-      hour: hour.toLocaleTimeString("en-US", { hour: "2-digit" }),
+      hour: `${i.toString().padStart(2, "0")}:00`,
       temp: Math.round((baseTemp + variation) * 10) / 10,
     }
   })
@@ -189,12 +187,16 @@ export default function WeatherPage() {
                     className="flex flex-col items-center rounded-xl bg-secondary/50 p-4"
                   >
                     <p className="text-sm font-medium">
-                      {day.date.toLocaleDateString("en-US", { weekday: "short" })}
+                      {day.date.toLocaleDateString("en-US", {
+                        weekday: "short",
+                        timeZone: "UTC",
+                      })}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {day.date.toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
+                        timeZone: "UTC",
                       })}
                     </p>
                     <DayIcon className="my-4 h-10 w-10 text-chart-3" />
@@ -352,6 +354,7 @@ export default function WeatherPage() {
                           weekday: "long",
                           month: "short",
                           day: "numeric",
+                          timeZone: "UTC",
                         })}
                       </p>
                       <p className="text-sm text-muted-foreground">

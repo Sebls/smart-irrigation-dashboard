@@ -1,10 +1,10 @@
 "use client"
 
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { StatsCards } from "@/components/dashboard/stats-cards"
-import { ZoneCard } from "@/components/dashboard/zone-card"
-import { QuickWeather } from "@/components/dashboard/quick-weather"
-import { WaterOverview } from "@/components/dashboard/water-overview"
+import { DashboardLayout } from "@/layouts/dashboard/dashboard-layout"
+import { StatsCards } from "@/features/overview/components/stats-cards"
+import { ZoneCard } from "@/features/zones/components/zone-card"
+import { QuickWeather } from "@/features/weather/components/quick-weather"
+import { WaterOverview } from "@/features/water/components/water-overview"
 import { mockZones, mockWaterTank, mockWeather } from "@/lib/mock-data"
 
 export default function OverviewPage() {

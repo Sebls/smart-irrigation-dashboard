@@ -3,9 +3,10 @@
 import { use } from "react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { PlantCard } from "@/components/dashboard/plant-card"
+import { DashboardLayout } from "@/layouts/dashboard/dashboard-layout"
+import { PlantCard } from "@/features/zones/components/plant-card"
 import { mockZones } from "@/lib/mock-data"
+import { useMounted } from "@/composables/use-mounted"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -28,12 +29,13 @@ interface ZoneDetailPageProps {
 export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
   const { zoneId } = use(params)
   const zone = mockZones.find((z) => z.id === zoneId)
+  const mounted = useMounted()
 
   if (!zone) {
     notFound()
   }
 
-  const timeSinceIrrigation = getTimeSince(zone.lastIrrigated)
+  const timeSinceIrrigation = mounted ? getTimeSince(zone.lastIrrigated) : "—"
 
   return (
     <DashboardLayout>

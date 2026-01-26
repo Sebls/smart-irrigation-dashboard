@@ -1,6 +1,6 @@
 "use client"
 
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { DashboardLayout } from "@/layouts/dashboard/dashboard-layout"
 import { mockZones, mockWaterTank } from "@/lib/mock-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -25,15 +25,20 @@ export default function WaterPage() {
   )
 
   const consumptionData = mockWaterTank.consumption.map((c) => ({
-    day: c.date.toLocaleDateString("en-US", { weekday: "short" }),
+    day: c.date.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }),
     amount: Math.round(c.amount),
   }))
 
   // Generate hourly data for today
-  const hourlyData = Array.from({ length: 24 }, (_, i) => ({
-    hour: `${i.toString().padStart(2, "0")}:00`,
-    usage: Math.round(Math.random() * 15 + 5),
-  }))
+  const hourlyData = Array.from({ length: 24 }, (_, i) => {
+    // Deterministic "usage" pattern to avoid hydration mismatches.
+    const wave = Math.sin((i / 24) * Math.PI * 2)
+    const usage = 12 + wave * 5 + (i % 3) * 0.8
+    return {
+      hour: `${i.toString().padStart(2, "0")}:00`,
+      usage: Math.round(usage),
+    }
+  })
 
   return (
     <DashboardLayout>

@@ -1,7 +1,7 @@
 "use client"
 
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { ZoneCard } from "@/components/dashboard/zone-card"
+import { DashboardLayout } from "@/layouts/dashboard/dashboard-layout"
+import { ZoneCard } from "@/features/zones/components/zone-card"
 import { mockZones } from "@/lib/mock-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
