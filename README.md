@@ -89,3 +89,17 @@ Using pnpm:
 ```bash
 pnpm lint
 ```
+
+### Tests
+
+Using npm:
+
+```bash
+npm run test
+```
+
+Using pnpm:
+
+```bash
+pnpm test
+```
