@@ -7,7 +7,7 @@ import './globals.css'
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: 'IrrigatePro - Smart Irrigation Dashboard',
+  title: 'MinesFarm - Smart Irrigation Dashboard',
   description: 'Monitor and control your smart irrigation system with real-time data and analytics',
   generator: 'v0.app',
 }
