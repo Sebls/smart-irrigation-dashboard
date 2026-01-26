@@ -16,6 +16,32 @@ This frontend dashboard, which consumes the API and provides visualization and i
 
 The dashboard does not directly communicate with hardware devices; all interactions occur through the backend services.
 
+## Project structure
+
+This project uses **Next.js App Router** (`app/`) and a modular architecture for shared UI, feature modules, and infrastructure concerns.
+
+```text
+app/                  # Next.js routes (App Router) — the “pages” of the application in this repo
+components/           # All shared components that are used across the entire application
+  ui/                 # shadcn/ui primitives
+composables/          # All shared composables
+config/               # Application configuration files
+features/             # Contains all the application features (most application code lives here)
+layouts/              # Different layouts for the pages
+lib/                  # Configurations for different third-party libraries used by the application
+pages/                # The pages of the application (concept); routes are implemented in `app/` (App Router)
+services/             # Shared application services and providers
+stores/               # Global state stores
+test/                # Test-related mocks, helpers, utilities, and configurations
+types/                # Shared TypeScript type definitions
+utils/                # Shared utility functions
+```
+
+Notes:
+
+- **Legacy import paths**: `@/lib/types`, `@/lib/utils`, `@/lib/mock-data`, and `@/hooks/*` are kept as thin re-exports for compatibility.
+- **Architecture overview**: see `docs/ARCHITECTURE.md`.
+
 ## Commands
 
 ### Install dependencies
