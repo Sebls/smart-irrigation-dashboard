@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useMounted } from "@/composables/use-mounted"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Droplets, Leaf, Thermometer, Clock } from "lucide-react"
@@ -12,7 +13,8 @@ interface ZoneCardProps {
 }
 
 export function ZoneCard({ zone }: ZoneCardProps) {
-  const timeSinceIrrigation = getTimeSince(zone.lastIrrigated)
+  const mounted = useMounted()
+  const timeSinceIrrigation = mounted ? getTimeSince(zone.lastIrrigated) : "—"
 
   return (
     <Link href={`/zones/${zone.id}`}>

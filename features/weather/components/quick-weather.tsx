@@ -51,7 +51,10 @@ export function QuickWeather({ weather }: QuickWeatherProps) {
                 className="flex flex-col items-center rounded-lg bg-secondary/50 p-2"
               >
                 <p className="text-xs text-muted-foreground">
-                  {day.date.toLocaleDateString("en-US", { weekday: "short" })}
+                  {day.date.toLocaleDateString("en-US", {
+                    weekday: "short",
+                    timeZone: "UTC",
+                  })}
                 </p>
                 <DayIcon className="my-1 h-5 w-5 text-muted-foreground" />
                 <p className="text-sm font-medium">{day.high}°</p>

@@ -20,6 +20,7 @@ export function SensorChart({ sensor }: SensorChartProps) {
     time: reading.timestamp.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "UTC",
     }),
     value: Math.round(reading.value * 10) / 10,
   }))
