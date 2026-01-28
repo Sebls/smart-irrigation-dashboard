@@ -53,6 +53,7 @@ export const mockZones: IrrigationZone[] = [
     avgHumidity: 68,
     waterUsage: 45,
     temperature: 24,
+    waterTankLevel: 72,
     airHumidity: 62,
     airQuality: 92,
     lastIrrigated: new Date(BASE_NOW.getTime() - 2 * 60 * 60 * 1000),
