@@ -1,16 +1,14 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { Droplets, Leaf, Activity, CloudRain } from "lucide-react"
-import type { IrrigationZone, WaterTank, Weather } from "@/lib/types"
+import { Droplets, Leaf, Activity } from "lucide-react"
+import type { IrrigationZone } from "@/lib/types"
 
 interface StatsCardsProps {
   zones: IrrigationZone[]
-  waterTank: WaterTank
-  weather: Weather
 }
 
-export function StatsCards({ zones, waterTank, weather }: StatsCardsProps) {
+export function StatsCards({ zones }: StatsCardsProps) {
   const totalPlants = zones.reduce((acc, zone) => acc + zone.plantCount, 0)
   const activeZones = zones.filter(z => z.isActive).length
   const avgHumidity = Math.round(zones.reduce((acc, zone) => acc + zone.avgHumidity, 0) / zones.length)
@@ -36,13 +34,6 @@ export function StatsCards({ zones, waterTank, weather }: StatsCardsProps) {
       icon: Droplets,
       color: "text-chart-2",
       bgColor: "bg-chart-2/10",
-    },
-    {
-      title: "Water Tank",
-      value: `${waterTank.level}%`,
-      icon: CloudRain,
-      color: "text-chart-3",
-      bgColor: "bg-chart-3/10",
     },
   ]
 
