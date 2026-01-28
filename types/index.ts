@@ -61,14 +61,6 @@ export interface WeatherForecast {
   precipitation: number
 }
 
-export type ViewType =
-  | 'overview'
-  | 'zone'
-  | 'plant'
-  | 'sensors'
-  | 'water'
-  | 'weather'
-
 export interface IrrigationZone {
   id: string
   name: string
