@@ -3,8 +3,6 @@
 import { DashboardLayout } from "@/layouts/dashboard/dashboard-layout"
 import { StatsCards } from "@/features/overview/components/stats-cards"
 import { ZoneCard } from "@/features/zones/components/zone-card"
-import { QuickWeather } from "@/features/weather/components/quick-weather"
-import { WaterOverview } from "@/features/water/components/water-overview"
 import { mockZones, mockWaterTank, mockWeather } from "@/lib/mock-data"
 
 export default function OverviewPage() {
@@ -34,11 +32,6 @@ export default function OverviewPage() {
                 ))}
               </div>
             </div>
-          </div>
-
-          <div className="space-y-6">
-            <QuickWeather weather={mockWeather} />
-            <WaterOverview waterTank={mockWaterTank} />
           </div>
         </div>
       </div>
