@@ -40,8 +40,10 @@ export function Sidebar() {
           </p>
         </div>
         {navigation.map((item) => {
-          const isActive = pathname === item.href || 
-            (item.href !== "/" && pathname.startsWith(item.href))
+          const isActive =
+            pathname !== null &&
+            (pathname === item.href ||
+              (item.href !== "/" && pathname.startsWith(item.href)))
           return (
             <Link
               key={item.name}
