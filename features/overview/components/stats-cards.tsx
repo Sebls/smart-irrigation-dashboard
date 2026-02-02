@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { Droplets, Leaf, Activity } from "lucide-react"
+import { Droplets, Leaf, Activity, Thermometer } from "lucide-react"
 import type { IrrigationZone } from "@/lib/types"
 
 interface StatsCardsProps {
@@ -12,6 +12,7 @@ export function StatsCards({ zones }: StatsCardsProps) {
   const totalPlants = zones.reduce((acc, zone) => acc + zone.plantCount, 0)
   const activeZones = zones.filter(z => z.isActive).length
   const avgHumidity = Math.round(zones.reduce((acc, zone) => acc + zone.avgHumidity, 0) / zones.length)
+  const avgTemp = Math.round(zones.reduce((acc, zone) => acc + zone.temperature, 0) / zones.length)
 
   const stats = [
     {
@@ -29,11 +30,18 @@ export function StatsCards({ zones }: StatsCardsProps) {
       bgColor: "bg-chart-1/10",
     },
     {
-      title: "Avg Humidity",
+      title: "Avg Soil Humidity",
       value: `${avgHumidity}%`,
       icon: Droplets,
       color: "text-chart-2",
       bgColor: "bg-chart-2/10",
+    },
+    {
+      title: "Avg Temperature",
+      value: `${avgTemp}°C`,
+      icon: Thermometer,
+      color: "text-chart-3",
+      bgColor: "bg-chart-3/10",
     },
   ]
 
