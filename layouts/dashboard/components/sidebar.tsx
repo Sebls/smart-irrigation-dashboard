@@ -18,7 +18,6 @@ const navigation = [
   { name: "Zones", href: "/zones", icon: Sprout },
   { name: "Sensors", href: "/sensors", icon: Activity },
   { name: "Water", href: "/water", icon: Droplets },
-  { name: "Weather", href: "/weather", icon: CloudRain },
 ]
 
 export function Sidebar() {
