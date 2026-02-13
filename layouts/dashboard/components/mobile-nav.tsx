@@ -5,20 +5,21 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
-  Droplets,
   Leaf,
   Activity,
-  CloudRain,
   Settings,
   Sprout,
+  Cpu,
+  ListChecks,
 } from "lucide-react"
 
 const navigation = [
   { name: "Overview", href: "/", icon: LayoutDashboard },
+  { name: "Devices", href: "/devices", icon: Cpu },
   { name: "Zones", href: "/zones", icon: Sprout },
   { name: "Sensors", href: "/sensors", icon: Activity },
-  { name: "Water", href: "/water", icon: Droplets },
-  { name: "Weather", href: "/weather", icon: CloudRain },
+  { name: "Jobs", href: "/irrigation-jobs", icon: ListChecks },
+  { name: "Activity", href: "/activity", icon: Activity },
 ]
 
 export function MobileNav() {
@@ -40,8 +41,10 @@ export function MobileNav() {
           </p>
         </div>
         {navigation.map((item) => {
-          const isActive = pathname === item.href || 
-            (item.href !== "/" && pathname.startsWith(item.href))
+          const isActive =
+            pathname !== null &&
+            (pathname === item.href ||
+              (item.href !== "/" && pathname.startsWith(item.href)))
           return (
             <Link
               key={item.name}

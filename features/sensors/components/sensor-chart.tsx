@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { SoilSensor } from "@/lib/types"
+import { formatTime } from "@/lib/utils"
 import {
   Area,
   AreaChart,
@@ -17,11 +18,7 @@ interface SensorChartProps {
 
 export function SensorChart({ sensor }: SensorChartProps) {
   const chartData = sensor.readings.map((reading) => ({
-    time: reading.timestamp.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "UTC",
-    }),
+    time: formatTime(reading.timestamp),
     value: Math.round(reading.value * 10) / 10,
   }))
 

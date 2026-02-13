@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Droplets, Leaf, Thermometer, Clock } from "lucide-react"
 import type { IrrigationZone } from "@/lib/types"
-import { cn } from "@/lib/utils"
+import { cn, formatTimeAgo } from "@/lib/utils"
 
 interface ZoneCardProps {
   zone: IrrigationZone
@@ -14,7 +14,7 @@ interface ZoneCardProps {
 
 export function ZoneCard({ zone }: ZoneCardProps) {
   const mounted = useMounted()
-  const timeSinceIrrigation = mounted ? getTimeSince(zone.lastIrrigated) : "—"
+  const timeSinceIrrigation = mounted ? formatTimeAgo(zone.lastIrrigated) : "—"
 
   return (
     <Link href={`/zones/${zone.id}`}>
@@ -89,54 +89,9 @@ export function ZoneCard({ zone }: ZoneCardProps) {
                 />
               </div>
             </div>
-            
-            {/* Water Capacity Chart */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Water Capacity</span>
-                <span className="font-medium">
-                  {zone.waterTankLevel !== undefined ? `${zone.waterTankLevel}%` : "N/A"}
-                </span>
-              </div>
-              <div className="h-2 rounded-full bg-secondary">
-                <div
-                  className={cn(
-                    "h-2 rounded-full transition-all",
-                    zone.waterTankLevel !== undefined
-                      ? zone.waterTankLevel >= 60
-                        ? "bg-primary"
-                        : zone.waterTankLevel >= 30
-                        ? "bg-chart-3"
-                        : "bg-destructive"
-                      : "bg-muted"
-                  )}
-                  style={{
-                    width: zone.waterTankLevel !== undefined
-                      ? `${zone.waterTankLevel}%`
-                      : "0%"
-                  }}
-                />
-              </div>
-            </div>
           </div>
         </CardContent>
       </Card>
     </Link>
   )
-}
-
-function getTimeSince(date: Date): string {
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  const hours = Math.floor(diff / (1000 * 60 * 60))
-  
-  if (hours < 1) {
-    const minutes = Math.floor(diff / (1000 * 60))
-    return `${minutes}m ago`
-  }
-  if (hours < 24) {
-    return `${hours}h ago`
-  }
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
 }

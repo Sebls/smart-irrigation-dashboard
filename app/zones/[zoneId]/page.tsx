@@ -5,7 +5,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { DashboardLayout } from "@/layouts/dashboard/dashboard-layout"
 import { PlantCard } from "@/features/zones/components/plant-card"
-import { mockZones } from "@/lib/mock-data"
+import { mockActivityEventsDb, mockIrrigationJobsDb, mockPlantsDb, mockSensorsDb, mockZones, mockZonesDb } from "@/lib/mock-data"
 import { useMounted } from "@/composables/use-mounted"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -20,7 +20,12 @@ import {
   Clock,
   Power,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, formatDateTime, formatTimeAgo } from "@/lib/utils"
+import { ZonePlantsSection } from "@/features/zones/components/zone-plants-section"
+import { ZoneSensorsSection } from "@/features/zones/components/zone-sensors-section"
+import { CopyToClipboardButton } from "@/components/copy-to-clipboard-button"
+import { IrrigationJobTable } from "@/features/irrigation-jobs/components/irrigation-job-table"
+import { ActivityFeed } from "@/features/activity/components/activity-feed"
 
 interface ZoneDetailPageProps {
   params: Promise<{ zoneId: string }>
@@ -28,14 +33,85 @@ interface ZoneDetailPageProps {
 
 export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
   const { zoneId } = use(params)
+  const zoneDb = mockZonesDb.find((z) => z.id === zoneId)
   const zone = mockZones.find((z) => z.id === zoneId)
   const mounted = useMounted()
 
+  // Requirements-driven zone detail (persisted fields)
+  if (zoneDb) {
+    const plants = mockPlantsDb.filter((p) => p.zone_id === zoneDb.id)
+    const sensors = mockSensorsDb.filter((s) => s.zone_id === zoneDb.id)
+    const jobs = mockIrrigationJobsDb.filter((j) => j.zone_id === zoneDb.id)
+    const events = mockActivityEventsDb.filter((e) => e.zone_id === zoneDb.id)
+
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <div className="flex items-center gap-4">
+            <Link href="/zones">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-2xl font-bold">{zoneDb.name}</h1>
+                <Badge variant={zoneDb.is_active ? "default" : "secondary"}>
+                  {zoneDb.is_active ? "Active" : "Inactive"}
+                </Badge>
+              </div>
+              <p className="text-muted-foreground">Zone detail (data view)</p>
+            </div>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base font-medium">Zone fields</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-lg border border-border p-3">
+                <p className="text-xs text-muted-foreground">zone.id</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <span className="font-mono text-xs">{zoneDb.id}</span>
+                  <CopyToClipboardButton value={zoneDb.id} label="Copy" />
+                </div>
+              </div>
+              <div className="rounded-lg border border-border p-3">
+                <p className="text-xs text-muted-foreground">zone.created_at</p>
+                <p className="mt-1 font-mono text-xs">{formatDateTime(zoneDb.created_at)}</p>
+              </div>
+              <div className="rounded-lg border border-border p-3">
+                <p className="text-xs text-muted-foreground">zone.updated_at</p>
+                <p className="mt-1 font-mono text-xs">{formatDateTime(zoneDb.updated_at)}</p>
+              </div>
+              <div className="rounded-lg border border-border p-3">
+                <p className="text-xs text-muted-foreground">zone.deleted_at</p>
+                <p className="mt-1 font-mono text-xs">{formatDateTime(zoneDb.deleted_at)}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <ZonePlantsSection plants={plants} />
+            <ZoneSensorsSection sensors={sensors} />
+          </div>
+
+          <IrrigationJobTable title="Irrigation jobs (zone-scoped)" jobs={jobs} />
+          <ActivityFeed events={events} />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  // Existing demo zone detail (UI prototype)
   if (!zone) {
     notFound()
   }
 
-  const timeSinceIrrigation = mounted ? getTimeSince(zone.lastIrrigated) : "—"
+  const now = new Date()
+  const timeSinceIrrigation = mounted ? formatTimeAgo(zone.lastIrrigated, { now }) : "—"
+  const timeSinceSensorUpdate = mounted ? formatTimeAgo(new Date(now.getTime() - 15 * 60 * 1000), { now }) : "—"
+  const timeSinceTempChange = mounted ? formatTimeAgo(new Date(now.getTime() - 1 * 60 * 60 * 1000), { now }) : "—"
 
   return (
     <DashboardLayout>
@@ -202,7 +278,7 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
                   </div>
                   <div>
                     <p className="text-sm font-medium">Sensor reading updated</p>
-                    <p className="text-xs text-muted-foreground">15 minutes ago</p>
+                    <p className="text-xs text-muted-foreground">{timeSinceSensorUpdate}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -211,7 +287,7 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
                   </div>
                   <div>
                     <p className="text-sm font-medium">Temperature change detected</p>
-                    <p className="text-xs text-muted-foreground">1 hour ago</p>
+                    <p className="text-xs text-muted-foreground">{timeSinceTempChange}</p>
                   </div>
                 </div>
               </CardContent>
@@ -221,20 +297,4 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
       </div>
     </DashboardLayout>
   )
-}
-
-function getTimeSince(date: Date): string {
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  const hours = Math.floor(diff / (1000 * 60 * 60))
-
-  if (hours < 1) {
-    const minutes = Math.floor(diff / (1000 * 60))
-    return `${minutes}m ago`
-  }
-  if (hours < 24) {
-    return `${hours}h ago`
-  }
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
 }
