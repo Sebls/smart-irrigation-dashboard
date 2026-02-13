@@ -1,6 +1,6 @@
 "use client"
 
-import { use } from "react"
+import { use, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { DashboardLayout } from "@/layouts/dashboard/dashboard-layout"
@@ -11,50 +11,134 @@ import { SensorIdentityPanel } from "@/features/sensors/components/sensor-identi
 import { SensorLatestReadingCard } from "@/features/sensors/components/sensor-latest-reading-card"
 import { SensorReadingsTable } from "@/features/sensors/components/sensor-readings-table"
 import type { Sensor, SensorReadingRecord } from "@/lib/types"
+import { api } from "@/lib/api"
 
 interface SensorDetailPageProps {
   params: Promise<{ sensorId: string }>
 }
 
+function isUuid(v: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)
+}
+
 export default function SensorDetailPage({ params }: SensorDetailPageProps) {
   const { sensorId } = use(params)
-  const sensorDb = mockSensorsDb.find((s) => s.id === sensorId)
+  const uuid = isUuid(sensorId)
 
-  const sensorFromDemo = mockZones
-    .flatMap((z) => z.plants)
-    .flatMap((p) => p.sensors)
-    .find((s) => s.id === sensorId)
+  const [sensorApi, setSensorApi] = useState<Sensor | null>(null)
+  const [readingsApi, setReadingsApi] = useState<SensorReadingRecord[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const sensor: Sensor | null = sensorDb
-    ? sensorDb
-    : sensorFromDemo
-      ? {
-          id: sensorFromDemo.id,
-          name: sensorFromDemo.name,
-          type: "soil_humidity",
-          unit: "%",
-          is_active: true,
-          zone_id: null,
-          plant_id: sensorFromDemo.plantId,
-          created_at: MOCK_BASE_NOW,
-          updated_at: MOCK_BASE_NOW,
-          deleted_at: null,
-        }
-      : null
+  useEffect(() => {
+    if (!uuid) return
+    let cancelled = false
+    Promise.all([
+      api.getSensor(sensorId),
+      api.listSensorReadings({ sensor_id: sensorId, limit: 500 }),
+    ])
+      .then(([s, rs]) => {
+        if (cancelled) return
+        setSensorApi(s)
+        setReadingsApi(rs)
+      })
+      .catch((e) => {
+        if (cancelled) return
+        setError(e instanceof Error ? e.message : String(e))
+        setSensorApi(null)
+        setReadingsApi([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [sensorId, uuid])
 
-  if (!sensor) notFound()
+  const sensorFromDemo = useMemo(() => {
+    if (uuid) return null
+    return mockZones
+      .flatMap((z) => z.plants)
+      .flatMap((p) => p.sensors)
+      .find((s) => s.id === sensorId)
+  }, [sensorId, uuid])
 
-  const readings: SensorReadingRecord[] =
-    mockSensorReadingsDbBySensorId[sensor.id] ??
-    (sensorFromDemo
-      ? sensorFromDemo.readings.map((r, idx) => ({
-          id: `${sensor.id}-reading-${idx + 1}`,
-          sensor_id: sensor.id,
-          recorded_at: r.timestamp,
-          value: r.value,
-        }))
-      : [])
-  const latest = readings.slice().sort((a, b) => b.recorded_at.getTime() - a.recorded_at.getTime())[0] ?? null
+  const sensorDb = useMemo(() => (uuid ? null : mockSensorsDb.find((s) => s.id === sensorId)), [sensorId, uuid])
+
+  const sensor: Sensor | null = uuid
+    ? sensorApi
+    : sensorDb
+      ? sensorDb
+      : sensorFromDemo
+        ? {
+            id: sensorFromDemo.id,
+            name: sensorFromDemo.name,
+            type: "soil_humidity",
+            unit: "%",
+            is_active: true,
+            zone_id: null,
+            plant_id: sensorFromDemo.plantId,
+            created_at: MOCK_BASE_NOW,
+            updated_at: MOCK_BASE_NOW,
+            deleted_at: null,
+          }
+        : null
+
+  // Keep hook order stable: only return after all hooks above ran.
+  if (uuid && error) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <div className="flex items-center gap-4">
+            <Link href="/sensors">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold">Sensor</h1>
+              <p className="text-muted-foreground">Sensor detail</p>
+            </div>
+          </div>
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (uuid && (sensorApi === null || readingsApi === null)) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <div className="flex items-center gap-4">
+            <Link href="/sensors">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold">Sensor</h1>
+              <p className="text-muted-foreground">Loading…</p>
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (!sensor) return notFound()
+
+  const readings: SensorReadingRecord[] = uuid
+    ? readingsApi!
+    : mockSensorReadingsDbBySensorId[sensorId] ??
+      (sensorFromDemo
+        ? sensorFromDemo.readings.map((r, idx) => ({
+            id: `${sensorId}-reading-${idx + 1}`,
+            sensor_id: sensorId,
+            recorded_at: r.timestamp,
+            value: r.value,
+          }))
+        : [])
+
+  const latest =
+    readings.slice().sort((a, b) => b.recorded_at.getTime() - a.recorded_at.getTime())[0] ?? null
 
   return (
     <DashboardLayout>
@@ -73,7 +157,7 @@ export default function SensorDetailPage({ params }: SensorDetailPageProps) {
 
         <SensorIdentityPanel sensor={sensor} />
         <SensorLatestReadingCard sensor={sensor} latest={latest} />
-        <SensorReadingsTable sensor={sensor} readings={readings} now={MOCK_BASE_NOW} />
+        <SensorReadingsTable sensor={sensor} readings={readings} now={uuid ? new Date() : MOCK_BASE_NOW} />
       </div>
     </DashboardLayout>
   )

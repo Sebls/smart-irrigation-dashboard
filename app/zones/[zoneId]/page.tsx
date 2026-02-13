@@ -1,11 +1,11 @@
 "use client"
 
-import { use } from "react"
+import { use, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { DashboardLayout } from "@/layouts/dashboard/dashboard-layout"
 import { PlantCard } from "@/features/zones/components/plant-card"
-import { mockActivityEventsDb, mockIrrigationJobsDb, mockPlantsDb, mockSensorsDb, mockZones, mockZonesDb } from "@/lib/mock-data"
+import { mockZones } from "@/lib/mock-data"
 import { useMounted } from "@/composables/use-mounted"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -26,23 +26,86 @@ import { ZoneSensorsSection } from "@/features/zones/components/zone-sensors-sec
 import { CopyToClipboardButton } from "@/components/copy-to-clipboard-button"
 import { IrrigationJobTable } from "@/features/irrigation-jobs/components/irrigation-job-table"
 import { ActivityFeed } from "@/features/activity/components/activity-feed"
+import type { ActivityEvent, IrrigationJob, PlantEntity, Sensor, Zone } from "@/lib/types"
+import { api } from "@/lib/api"
 
 interface ZoneDetailPageProps {
   params: Promise<{ zoneId: string }>
 }
 
+function isUuid(v: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)
+}
+
 export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
   const { zoneId } = use(params)
-  const zoneDb = mockZonesDb.find((z) => z.id === zoneId)
-  const zone = mockZones.find((z) => z.id === zoneId)
+  const uuid = isUuid(zoneId)
+  const zoneDemo = mockZones.find((z) => z.id === zoneId)
   const mounted = useMounted()
 
-  // Requirements-driven zone detail (persisted fields)
-  if (zoneDb) {
-    const plants = mockPlantsDb.filter((p) => p.zone_id === zoneDb.id)
-    const sensors = mockSensorsDb.filter((s) => s.zone_id === zoneDb.id)
-    const jobs = mockIrrigationJobsDb.filter((j) => j.zone_id === zoneDb.id)
-    const events = mockActivityEventsDb.filter((e) => e.zone_id === zoneDb.id)
+  const [zoneDb, setZoneDb] = useState<Zone | null>(null)
+  const [plantsDb, setPlantsDb] = useState<PlantEntity[] | null>(null)
+  const [sensorsDb, setSensorsDb] = useState<Sensor[] | null>(null)
+  const [jobsDb, setJobsDb] = useState<IrrigationJob[] | null>(null)
+  const [eventsDb, setEventsDb] = useState<ActivityEvent[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!uuid) return
+    let cancelled = false
+    Promise.all([
+      api.getZone(zoneId),
+      api.listPlants(),
+      api.listSensors(),
+      api.listIrrigationJobs({ zone_id: zoneId, limit: 500 }),
+      api.listActivityEvents({ zone_id: zoneId, limit: 500 }),
+    ])
+      .then(([z, plants, sensors, jobs, events]) => {
+        if (cancelled) return
+        setZoneDb(z)
+        setPlantsDb(plants.filter((p) => p.zone_id === z.id))
+        setSensorsDb(sensors.filter((s) => s.zone_id === z.id))
+        setJobsDb(jobs)
+        setEventsDb(events)
+      })
+      .catch((e) => {
+        if (cancelled) return
+        setError(e instanceof Error ? e.message : String(e))
+        setZoneDb(null)
+        setPlantsDb([])
+        setSensorsDb([])
+        setJobsDb([])
+        setEventsDb([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [uuid, zoneId])
+
+  // Requirements-driven zone detail (persisted fields) for UUID zones
+  if (uuid) {
+    if (error && zoneDb === null) {
+      notFound()
+    }
+    if (zoneDb === null || plantsDb === null || sensorsDb === null || jobsDb === null || eventsDb === null) {
+      return (
+        <DashboardLayout>
+          <div className="space-y-6">
+            <div className="flex items-center gap-4">
+              <Link href="/zones">
+                <Button variant="ghost" size="icon">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </Link>
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold">Zone</h1>
+                <p className="text-muted-foreground">Loading…</p>
+              </div>
+            </div>
+          </div>
+        </DashboardLayout>
+      )
+    }
 
     return (
       <DashboardLayout>
@@ -63,6 +126,8 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
               <p className="text-muted-foreground">Zone detail (data view)</p>
             </div>
           </div>
+
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
           <Card>
             <CardHeader>
@@ -92,24 +157,24 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
           </Card>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <ZonePlantsSection plants={plants} />
-            <ZoneSensorsSection sensors={sensors} />
+            <ZonePlantsSection plants={plantsDb} />
+            <ZoneSensorsSection sensors={sensorsDb} />
           </div>
 
-          <IrrigationJobTable title="Irrigation jobs (zone-scoped)" jobs={jobs} />
-          <ActivityFeed events={events} />
+          <IrrigationJobTable title="Irrigation jobs (zone-scoped)" jobs={jobsDb} />
+          <ActivityFeed events={eventsDb} />
         </div>
       </DashboardLayout>
     )
   }
 
   // Existing demo zone detail (UI prototype)
-  if (!zone) {
+  if (!zoneDemo) {
     notFound()
   }
 
   const now = new Date()
-  const timeSinceIrrigation = mounted ? formatTimeAgo(zone.lastIrrigated, { now }) : "—"
+  const timeSinceIrrigation = mounted ? formatTimeAgo(zoneDemo.lastIrrigated, { now }) : "—"
   const timeSinceSensorUpdate = mounted ? formatTimeAgo(new Date(now.getTime() - 15 * 60 * 1000), { now }) : "—"
   const timeSinceTempChange = mounted ? formatTimeAgo(new Date(now.getTime() - 1 * 60 * 60 * 1000), { now }) : "—"
 
@@ -124,14 +189,14 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
           </Link>
           <div className="flex-1">
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold">{zone.name}</h1>
+              <h1 className="text-2xl font-bold">{zoneDemo.name}</h1>
               <Badge
-                variant={zone.isActive ? "default" : "secondary"}
+                variant={zoneDemo.isActive ? "default" : "secondary"}
                 className={cn(
-                  zone.isActive && "bg-primary text-primary-foreground"
+                  zoneDemo.isActive && "bg-primary text-primary-foreground"
                 )}
               >
-                {zone.isActive ? "Active" : "Idle"}
+                {zoneDemo.isActive ? "Active" : "Idle"}
               </Badge>
             </div>
             <p className="text-muted-foreground">
@@ -140,7 +205,7 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
           </div>
           <Button className="bg-primary hover:bg-primary/90">
             <Power className="mr-2 h-4 w-4" />
-            {zone.isActive ? "Stop Irrigation" : "Start Irrigation"}
+            {zoneDemo.isActive ? "Stop Irrigation" : "Start Irrigation"}
           </Button>
         </div>
 
@@ -152,7 +217,7 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Avg Humidity</p>
-                <p className="text-xl font-bold">{zone.avgHumidity}%</p>
+                <p className="text-xl font-bold">{zoneDemo.avgHumidity}%</p>
               </div>
             </CardContent>
           </Card>
@@ -163,7 +228,7 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Plants</p>
-                <p className="text-xl font-bold">{zone.plantCount}</p>
+                <p className="text-xl font-bold">{zoneDemo.plantCount}</p>
               </div>
             </CardContent>
           </Card>
@@ -174,7 +239,7 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Temperature</p>
-                <p className="text-xl font-bold">{zone.temperature}°C</p>
+                <p className="text-xl font-bold">{zoneDemo.temperature}°C</p>
               </div>
             </CardContent>
           </Card>
@@ -185,7 +250,7 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Air Humidity</p>
-                <p className="text-xl font-bold">{zone.airHumidity}%</p>
+                <p className="text-xl font-bold">{zoneDemo.airHumidity}%</p>
               </div>
             </CardContent>
           </Card>
@@ -207,16 +272,16 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base font-medium">
-                  Plants in Zone ({zone.plants.length})
+                  Plants in Zone ({zoneDemo.plants.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  {zone.plants.map((plant) => (
+                  {zoneDemo.plants.map((plant) => (
                     <PlantCard
                       key={plant.id}
                       plant={plant}
-                      zoneId={zone.id}
+                      zoneId={zoneDemo.id}
                     />
                   ))}
                 </div>
@@ -237,21 +302,21 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
                     <Thermometer className="h-5 w-5 text-chart-3" />
                     <span className="text-sm">Temperature</span>
                   </div>
-                  <span className="font-semibold">{zone.temperature}°C</span>
+                  <span className="font-semibold">{zoneDemo.temperature}°C</span>
                 </div>
                 <div className="flex items-center justify-between rounded-lg bg-secondary/50 p-3">
                   <div className="flex items-center gap-3">
                     <Wind className="h-5 w-5 text-chart-2" />
                     <span className="text-sm">Air Humidity</span>
                   </div>
-                  <span className="font-semibold">{zone.airHumidity}%</span>
+                  <span className="font-semibold">{zoneDemo.airHumidity}%</span>
                 </div>
                 <div className="flex items-center justify-between rounded-lg bg-secondary/50 p-3">
                   <div className="flex items-center gap-3">
                     <Activity className="h-5 w-5 text-primary" />
                     <span className="text-sm">Air Quality</span>
                   </div>
-                  <span className="font-semibold">{zone.airQuality}</span>
+                  <span className="font-semibold">{zoneDemo.airQuality}</span>
                 </div>
               </CardContent>
             </Card>
