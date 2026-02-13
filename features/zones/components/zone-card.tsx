@@ -71,20 +71,52 @@ export function ZoneCard({ zone }: ZoneCardProps) {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Soil Humidity</span>
-              <span className="font-medium">{zone.avgHumidity}%</span>
+          <div className="space-y-4">
+            {/* Soil Humidity Chart */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Soil Humidity</span>
+                <span className="font-medium">{zone.avgHumidity}%</span>
+              </div>
+              <div className="h-2 rounded-full bg-secondary">
+                <div
+                  className={cn(
+                    "h-2 rounded-full transition-all",
+                    zone.avgHumidity >= 60 ? "bg-primary" : 
+                    zone.avgHumidity >= 40 ? "bg-chart-3" : "bg-destructive"
+                  )}
+                  style={{ width: `${zone.avgHumidity}%` }}
+                />
+              </div>
             </div>
-            <div className="h-2 rounded-full bg-secondary">
-              <div
-                className={cn(
-                  "h-2 rounded-full transition-all",
-                  zone.avgHumidity >= 60 ? "bg-primary" : 
-                  zone.avgHumidity >= 40 ? "bg-chart-3" : "bg-destructive"
-                )}
-                style={{ width: `${zone.avgHumidity}%` }}
-              />
+            
+            {/* Water Capacity Chart */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Water Capacity</span>
+                <span className="font-medium">
+                  {zone.waterTankLevel !== undefined ? `${zone.waterTankLevel}%` : "N/A"}
+                </span>
+              </div>
+              <div className="h-2 rounded-full bg-secondary">
+                <div
+                  className={cn(
+                    "h-2 rounded-full transition-all",
+                    zone.waterTankLevel !== undefined
+                      ? zone.waterTankLevel >= 60
+                        ? "bg-primary"
+                        : zone.waterTankLevel >= 30
+                        ? "bg-chart-3"
+                        : "bg-destructive"
+                      : "bg-muted"
+                  )}
+                  style={{
+                    width: zone.waterTankLevel !== undefined
+                      ? `${zone.waterTankLevel}%`
+                      : "0%"
+                  }}
+                />
+              </div>
             </div>
           </div>
         </CardContent>

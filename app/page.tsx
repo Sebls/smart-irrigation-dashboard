@@ -3,7 +3,7 @@
 import { DashboardLayout } from "@/layouts/dashboard/dashboard-layout"
 import { StatsCards } from "@/features/overview/components/stats-cards"
 import { ZoneCard } from "@/features/zones/components/zone-card"
-import { mockZones, mockWaterTank, mockWeather } from "@/lib/mock-data"
+import { mockZones } from "@/lib/mock-data"
 
 export default function OverviewPage() {
   return (
@@ -18,8 +18,6 @@ export default function OverviewPage() {
 
         <StatsCards
           zones={mockZones}
-          waterTank={mockWaterTank}
-          weather={mockWeather}
         />
 
         <div className="grid gap-6 lg:grid-cols-3">

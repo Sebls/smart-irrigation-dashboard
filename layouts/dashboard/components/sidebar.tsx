@@ -18,7 +18,6 @@ const navigation = [
   { name: "Zones", href: "/zones", icon: Sprout },
   { name: "Sensors", href: "/sensors", icon: Activity },
   { name: "Water", href: "/water", icon: Droplets },
-  { name: "Weather", href: "/weather", icon: CloudRain },
 ]
 
 export function Sidebar() {
@@ -40,8 +39,10 @@ export function Sidebar() {
           </p>
         </div>
         {navigation.map((item) => {
-          const isActive = pathname === item.href || 
-            (item.href !== "/" && pathname.startsWith(item.href))
+          const isActive =
+            pathname !== null &&
+            (pathname === item.href ||
+              (item.href !== "/" && pathname.startsWith(item.href)))
           return (
             <Link
               key={item.name}
