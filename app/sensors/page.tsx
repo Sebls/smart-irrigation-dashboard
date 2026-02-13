@@ -1,10 +1,12 @@
 "use client"
 
+import Link from "next/link"
 import { useState } from "react"
 import { DashboardLayout } from "@/layouts/dashboard/dashboard-layout"
 import { mockZones } from "@/lib/mock-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { CopyToClipboardButton } from "@/components/copy-to-clipboard-button"
 import {
   Select,
   SelectContent,
@@ -254,6 +256,9 @@ export default function SensorsPage() {
                 <thead>
                   <tr className="border-b border-border text-left">
                     <th className="pb-3 text-sm font-medium text-muted-foreground">
+                      ID
+                    </th>
+                    <th className="pb-3 text-sm font-medium text-muted-foreground">
                       Sensor
                     </th>
                     <th className="pb-3 text-sm font-medium text-muted-foreground">
@@ -288,6 +293,17 @@ export default function SensorsPage() {
 
                     return (
                       <tr key={sensor.id} className="border-b border-border/50">
+                        <td className="py-3 text-sm font-medium font-mono">
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={`/sensors/${sensor.id}`}
+                              className="underline underline-offset-4 hover:text-primary"
+                            >
+                              {sensor.id}
+                            </Link>
+                            <CopyToClipboardButton value={sensor.id} label="ID" />
+                          </div>
+                        </td>
                         <td className="py-3 text-sm font-medium">{sensor.name}</td>
                         <td className="py-3 text-sm text-muted-foreground">
                           {sensor.plantName}
