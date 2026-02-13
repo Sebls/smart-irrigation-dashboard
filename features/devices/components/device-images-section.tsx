@@ -8,6 +8,7 @@ import { JsonViewer } from "@/components/json-viewer"
 import { formatDateTime } from "@/lib/utils"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Camera } from "lucide-react"
+import { api } from "@/lib/api"
 
 function groupByType(images: DeviceImage[]) {
   return images.reduce<Record<string, DeviceImage[]>>((acc, img) => {
@@ -73,7 +74,7 @@ export function DeviceImagesSection({ images }: DeviceImagesSectionProps) {
                   <div className="overflow-hidden rounded-lg border border-border bg-secondary/20">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={latest.image_url}
+                      src={api.deviceLatestImageByTypeFileUrl(latest.device_id, type)}
                       alt={`${type} latest`}
                       className="h-full w-full object-cover"
                     />
@@ -113,8 +114,10 @@ export function DeviceImagesSection({ images }: DeviceImagesSectionProps) {
                       <TableCell className="font-mono text-xs">{img.type}</TableCell>
                       <TableCell className="font-mono text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="truncate max-w-56">{img.image_url}</span>
-                          <CopyToClipboardButton value={img.image_url} label="URL" />
+                          <span className="truncate max-w-56">
+                            {api.deviceImageFileUrl(img.device_id, img.id)}
+                          </span>
+                          <CopyToClipboardButton value={api.deviceImageFileUrl(img.device_id, img.id)} label="URL" />
                         </div>
                       </TableCell>
                       <TableCell className="font-mono text-xs">{formatDateTime(img.captured_at)}</TableCell>

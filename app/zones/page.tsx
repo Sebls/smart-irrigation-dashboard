@@ -1,23 +1,72 @@
 "use client"
 
+import { useEffect, useMemo, useState } from "react"
 import { DashboardLayout } from "@/layouts/dashboard/dashboard-layout"
-import { ZoneCard } from "@/features/zones/components/zone-card"
+import { ZoneCardDb } from "@/features/zones/components/zone-card-db"
 import { ZoneListTable } from "@/features/zones/components/zone-list-table"
-import { mockZones } from "@/lib/mock-data"
-import { mockZonesDb } from "@/lib/mock-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Activity, Droplets, Leaf, Thermometer } from "lucide-react"
+import { Activity, Leaf, Droplets } from "lucide-react"
+import type { PlantEntity, Sensor, Zone } from "@/lib/types"
+import { api } from "@/lib/api"
 
 export default function ZonesPage() {
-  const activeZones = mockZones.filter((z) => z.isActive).length
-  const totalPlants = mockZones.reduce((acc, zone) => acc + zone.plantCount, 0)
-  const avgHumidity = Math.round(
-    mockZones.reduce((acc, zone) => acc + zone.avgHumidity, 0) / mockZones.length
-  )
-  const avgTemp = Math.round(
-    mockZones.reduce((acc, zone) => acc + zone.temperature, 0) / mockZones.length
-  )
+  const [zonesDb, setZonesDb] = useState<Zone[] | null>(null)
+  const [plantsDb, setPlantsDb] = useState<PlantEntity[] | null>(null)
+  const [sensorsDb, setSensorsDb] = useState<Sensor[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    Promise.all([api.listZones(), api.listPlants(), api.listSensors()])
+      .then(([z, p, s]) => {
+        if (cancelled) return
+        setZonesDb(z)
+        setPlantsDb(p)
+        setSensorsDb(s)
+      })
+      .catch((e) => {
+        if (cancelled) return
+        setError(e instanceof Error ? e.message : String(e))
+        setZonesDb([])
+        setPlantsDb([])
+        setSensorsDb([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const stats = useMemo(() => {
+    const zones = zonesDb ?? []
+    const plants = plantsDb ?? []
+    const sensors = sensorsDb ?? []
+    return {
+      activeZones: zones.filter((z) => z.is_active).length,
+      totalZones: zones.length,
+      totalPlants: plants.length,
+      totalSensors: sensors.length,
+    }
+  }, [plantsDb, sensorsDb, zonesDb])
+
+  const perZone = useMemo(() => {
+    const zones = zonesDb ?? []
+    const plants = plantsDb ?? []
+    const sensors = sensorsDb ?? []
+    const plantsByZone = plants.reduce<Record<string, number>>((acc, row) => {
+      acc[row.zone_id] = (acc[row.zone_id] ?? 0) + 1
+      return acc
+    }, {})
+    const sensorsByZone = sensors.reduce<Record<string, number>>((acc, row) => {
+      if (!row.zone_id) return acc
+      acc[row.zone_id] = (acc[row.zone_id] ?? 0) + 1
+      return acc
+    }, {})
+    return zones.map((zone) => ({
+      zone,
+      plantCount: plantsByZone[zone.id] ?? 0,
+      sensorCount: sensorsByZone[zone.id] ?? 0,
+    }))
+  }, [plantsDb, sensorsDb, zonesDb])
 
   return (
     <DashboardLayout>
@@ -29,6 +78,8 @@ export default function ZonesPage() {
           </p>
         </div>
 
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardContent className="flex items-center gap-4 p-4">
@@ -38,7 +89,7 @@ export default function ZonesPage() {
               <div>
                 <p className="text-xs text-muted-foreground">Active Zones</p>
                 <p className="text-xl font-bold">
-                  {activeZones}/{mockZones.length}
+                  {stats.activeZones}/{stats.totalZones}
                 </p>
               </div>
             </CardContent>
@@ -50,7 +101,7 @@ export default function ZonesPage() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Total Plants</p>
-                <p className="text-xl font-bold">{totalPlants}</p>
+                <p className="text-xl font-bold">{stats.totalPlants}</p>
               </div>
             </CardContent>
           </Card>
@@ -60,28 +111,22 @@ export default function ZonesPage() {
                 <Droplets className="h-5 w-5 text-chart-2" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Avg Humidity</p>
-                <p className="text-xl font-bold">{avgHumidity}%</p>
+                <p className="text-xs text-muted-foreground">Total Sensors</p>
+                <p className="text-xl font-bold">{stats.totalSensors}</p>
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="flex items-center gap-4 p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-chart-3/10">
-                <Thermometer className="h-5 w-5 text-chart-3" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Avg Temperature</p>
-                <p className="text-xl font-bold">{avgTemp}°C</p>
-              </div>
-            </CardContent>
-          </Card>
+          <div />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {mockZones.map((zone) => (
-            <ZoneCard key={zone.id} zone={zone} />
-          ))}
+          {zonesDb === null || plantsDb === null || sensorsDb === null ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : (
+            perZone.map(({ zone, plantCount, sensorCount }) => (
+              <ZoneCardDb key={zone.id} zone={zone} plantCount={plantCount} sensorCount={sensorCount} />
+            ))
+          )}
         </div>
 
         <div className="space-y-3">
@@ -91,7 +136,11 @@ export default function ZonesPage() {
               Requirements-driven table view with persisted fields.
             </p>
           </div>
-          <ZoneListTable zones={mockZonesDb} />
+          {zonesDb === null ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : (
+            <ZoneListTable zones={zonesDb} />
+          )}
         </div>
       </div>
     </DashboardLayout>

@@ -1,6 +1,6 @@
 "use client"
 
-import { use } from "react"
+import { use, useEffect, useState } from "react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { DashboardLayout } from "@/layouts/dashboard/dashboard-layout"
@@ -15,18 +15,84 @@ import { DeviceHealthPanel } from "@/features/devices/components/device-health-p
 import { DeviceTelemetryIdentityPanel } from "@/features/devices/components/device-telemetry-identity-panel"
 import { DeviceImagesSection } from "@/features/devices/components/device-images-section"
 import { DeviceLogsSection } from "@/features/devices/components/device-logs-section"
+import type { Device, DeviceImage, DeviceLog } from "@/lib/types"
+import { api } from "@/lib/api"
 
 interface DeviceDetailPageProps {
   params: Promise<{ deviceId: string }>
 }
 
+function isUuid(v: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)
+}
+
 export default function DeviceDetailPage({ params }: DeviceDetailPageProps) {
   const { deviceId } = use(params)
-  const device = mockDevicesDb.find((d) => d.id === deviceId)
-  if (!device) notFound()
 
-  const logs = mockDeviceLogsDb.filter((l) => l.device_id === device.id)
-  const images = mockDeviceImagesDb.filter((img) => img.device_id === device.id)
+  const uuid = isUuid(deviceId)
+  const [deviceApi, setDeviceApi] = useState<Device | null>(null)
+  const [imagesApi, setImagesApi] = useState<DeviceImage[] | null>(null)
+  const [logsApi, setLogsApi] = useState<DeviceLog[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!uuid) return
+    let cancelled = false
+    Promise.allSettled([
+      api.getDevice(deviceId),
+      api.listDeviceImages(deviceId),
+      api.listDeviceLogs(deviceId),
+    ]).then((results) => {
+      if (cancelled) return
+      const [deviceRes, imagesRes, logsRes] = results
+
+      if (deviceRes.status === "rejected") {
+        setError(deviceRes.reason instanceof Error ? deviceRes.reason.message : String(deviceRes.reason))
+        setDeviceApi(null)
+        setImagesApi([])
+        setLogsApi([])
+        return
+      }
+
+      setDeviceApi(deviceRes.value)
+      setImagesApi(imagesRes.status === "fulfilled" ? imagesRes.value : [])
+      setLogsApi(logsRes.status === "fulfilled" ? logsRes.value : [])
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [deviceId, uuid])
+
+  if (uuid) {
+    if (error) {
+      return notFound()
+    }
+    if (deviceApi === null || imagesApi === null || logsApi === null) {
+      return (
+        <DashboardLayout>
+          <div className="space-y-6">
+            <div className="flex items-center gap-4">
+              <Link href="/devices">
+                <Button variant="ghost" size="icon">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </Link>
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold">Device</h1>
+                <p className="text-muted-foreground">Loading…</p>
+              </div>
+            </div>
+          </div>
+        </DashboardLayout>
+      )
+    }
+  }
+
+  const device = uuid ? deviceApi : mockDevicesDb.find((d) => d.id === deviceId)
+  if (!device) return notFound()
+
+  const logs = uuid ? logsApi! : mockDeviceLogsDb.filter((l) => l.device_id === device.id)
+  const images = uuid ? imagesApi! : mockDeviceImagesDb.filter((img) => img.device_id === device.id)
   const identities = mockTelemetryIdentityByDeviceId[device.id] ?? []
 
   return (
@@ -51,6 +117,8 @@ export default function DeviceDetailPage({ params }: DeviceDetailPageProps) {
             <p className="text-muted-foreground">{device.description ?? "Device detail"}</p>
           </div>
         </div>
+
+        {uuid && error ? <p className="text-sm text-destructive">{error}</p> : null}
 
         <Card>
           <CardHeader>
@@ -80,10 +148,10 @@ export default function DeviceDetailPage({ params }: DeviceDetailPageProps) {
           </CardContent>
         </Card>
 
-        <DeviceHealthPanel device={device} logs={logs} now={MOCK_BASE_NOW} />
+        <DeviceHealthPanel device={device} logs={logs} now={uuid ? new Date() : MOCK_BASE_NOW} />
         <DeviceTelemetryIdentityPanel identities={identities} />
         <DeviceImagesSection images={images} />
-        <DeviceLogsSection logs={logs} now={MOCK_BASE_NOW} />
+        <DeviceLogsSection logs={logs} now={uuid ? new Date() : MOCK_BASE_NOW} />
       </div>
     </DashboardLayout>
   )
