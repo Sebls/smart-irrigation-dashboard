@@ -24,7 +24,6 @@ export function ActivityFeed({ events }: ActivityFeedProps) {
               <TableHead>Type</TableHead>
               <TableHead>Message</TableHead>
               <TableHead>Zone</TableHead>
-              <TableHead>Plant</TableHead>
               <TableHead>Sensor</TableHead>
               <TableHead>Occurred at</TableHead>
             </TableRow>
@@ -53,16 +52,6 @@ export function ActivityFeed({ events }: ActivityFeedProps) {
                       <div className="flex items-center gap-2">
                         <span>{e.zone_id}</span>
                         <CopyToClipboardButton value={e.zone_id} label="ID" />
-                      </div>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {e.plant_id ? (
-                      <div className="flex items-center gap-2">
-                        <span>{e.plant_id}</span>
-                        <CopyToClipboardButton value={e.plant_id} label="ID" />
                       </div>
                     ) : (
                       "—"

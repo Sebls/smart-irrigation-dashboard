@@ -97,7 +97,6 @@ export function DeviceImagesSection({ images }: DeviceImagesSectionProps) {
                     <TableHead>Type</TableHead>
                     <TableHead>Image URL</TableHead>
                     <TableHead>Captured</TableHead>
-                    <TableHead>Plant</TableHead>
                     <TableHead>Zone</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -121,7 +120,6 @@ export function DeviceImagesSection({ images }: DeviceImagesSectionProps) {
                         </div>
                       </TableCell>
                       <TableCell className="font-mono text-xs">{formatDateTime(img.captured_at)}</TableCell>
-                      <TableCell className="font-mono text-xs">{img.plant_id ?? "—"}</TableCell>
                       <TableCell className="font-mono text-xs">{img.zone_id ?? "—"}</TableCell>
                     </TableRow>
                   ))}
