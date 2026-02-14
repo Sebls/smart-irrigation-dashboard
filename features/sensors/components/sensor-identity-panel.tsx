@@ -51,10 +51,6 @@ export function SensorIdentityPanel({ sensor }: SensorIdentityPanelProps) {
           <p className="mt-1 font-mono text-xs">{sensor.zone_id ?? "—"}</p>
         </div>
         <div className="rounded-lg border border-border p-3">
-          <p className="text-xs text-muted-foreground">sensor.plant_id</p>
-          <p className="mt-1 font-mono text-xs">{sensor.plant_id ?? "—"}</p>
-        </div>
-        <div className="rounded-lg border border-border p-3">
           <p className="text-xs text-muted-foreground">created_at</p>
           <p className="mt-1 font-mono text-xs">{formatDateTime(sensor.created_at)}</p>
         </div>

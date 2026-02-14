@@ -1,20 +1,19 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { Activity, Leaf, Thermometer, Droplets } from "lucide-react"
-import type { PlantEntity, Sensor, Zone } from "@/lib/types"
+import { Activity, Thermometer, Droplets } from "lucide-react"
+import type { Sensor, Zone } from "@/lib/types"
 
 interface StatsCardsDbProps {
   zones: Zone[]
-  plants: PlantEntity[]
   sensors: Sensor[]
 }
 
-export function StatsCardsDb({ zones, plants, sensors }: StatsCardsDbProps) {
+export function StatsCardsDb({ zones, sensors }: StatsCardsDbProps) {
   const activeZones = zones.filter((z) => z.is_active).length
   const totalZones = zones.length
-  const totalPlants = plants.length
   const totalSensors = sensors.length
+  const activeSensors = sensors.filter((s) => s.is_active).length
 
   const stats = [
     {
@@ -25,11 +24,11 @@ export function StatsCardsDb({ zones, plants, sensors }: StatsCardsDbProps) {
       bgColor: "bg-primary/10",
     },
     {
-      title: "Total Plants",
-      value: totalPlants,
-      icon: Leaf,
-      color: "text-chart-1",
-      bgColor: "bg-chart-1/10",
+      title: "Active Sensors",
+      value: activeSensors,
+      icon: Thermometer,
+      color: "text-chart-3",
+      bgColor: "bg-chart-3/10",
     },
     {
       title: "Total Sensors",
@@ -39,11 +38,11 @@ export function StatsCardsDb({ zones, plants, sensors }: StatsCardsDbProps) {
       bgColor: "bg-chart-2/10",
     },
     {
-      title: "Zones Monitored",
+      title: "Total Zones",
       value: totalZones,
-      icon: Thermometer,
-      color: "text-chart-3",
-      bgColor: "bg-chart-3/10",
+      icon: Activity,
+      color: "text-chart-1",
+      bgColor: "bg-chart-1/10",
     },
   ]
 

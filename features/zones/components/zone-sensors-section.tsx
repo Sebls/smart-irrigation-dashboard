@@ -28,7 +28,6 @@ export function ZoneSensorsSection({ sensors }: ZoneSensorsSectionProps) {
               <TableHead>sensor.unit</TableHead>
               <TableHead>sensor.is_active</TableHead>
               <TableHead>sensor.zone_id</TableHead>
-              <TableHead>sensor.plant_id</TableHead>
               <TableHead>created_at</TableHead>
               <TableHead>updated_at</TableHead>
               <TableHead>deleted_at</TableHead>
@@ -70,16 +69,6 @@ export function ZoneSensorsSection({ sensors }: ZoneSensorsSectionProps) {
                     <div className="flex items-center gap-2">
                       <span>{s.zone_id}</span>
                       <CopyToClipboardButton value={s.zone_id} label="ID" />
-                    </div>
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
-                <TableCell className="font-mono text-xs">
-                  {s.plant_id ? (
-                    <div className="flex items-center gap-2">
-                      <span>{s.plant_id}</span>
-                      <CopyToClipboardButton value={s.plant_id} label="ID" />
                     </div>
                   ) : (
                     "—"

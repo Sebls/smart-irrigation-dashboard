@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { DashboardLayout } from "@/layouts/dashboard/dashboard-layout"
 import { ActivityFeed } from "@/features/activity/components/activity-feed"
-import type { ActivityEvent, PlantEntity, Sensor, Zone } from "@/lib/types"
+import type { ActivityEvent, Sensor, Zone } from "@/lib/types"
 import { api } from "@/lib/api"
 import {
   Select,
@@ -15,22 +15,19 @@ import {
 
 export default function ActivityPage() {
   const [zoneId, setZoneId] = useState<string>("all")
-  const [plantId, setPlantId] = useState<string>("all")
   const [sensorId, setSensorId] = useState<string>("all")
 
   const [zones, setZones] = useState<Zone[] | null>(null)
-  const [plants, setPlants] = useState<PlantEntity[] | null>(null)
   const [sensors, setSensors] = useState<Sensor[] | null>(null)
   const [events, setEvents] = useState<ActivityEvent[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([api.listZones(), api.listPlants(), api.listSensors(), api.listActivityEvents({ limit: 500 })])
-      .then(([z, p, s, e]) => {
+    Promise.all([api.listZones(), api.listSensors(), api.listActivityEvents({ limit: 500 })])
+      .then(([z, s, e]) => {
         if (cancelled) return
         setZones(z)
-        setPlants(p)
         setSensors(s)
         setEvents(e)
       })
@@ -38,7 +35,6 @@ export default function ActivityPage() {
         if (cancelled) return
         setError(err instanceof Error ? err.message : String(err))
         setZones([])
-        setPlants([])
         setSensors([])
         setEvents([])
       })
@@ -50,16 +46,15 @@ export default function ActivityPage() {
   const filtered = useMemo(() => {
     return (events ?? [])
       .filter((e) => (zoneId === "all" ? true : e.zone_id === zoneId))
-      .filter((e) => (plantId === "all" ? true : e.plant_id === plantId))
       .filter((e) => (sensorId === "all" ? true : e.sensor_id === sensorId))
-  }, [events, plantId, sensorId, zoneId])
+  }, [events, sensorId, zoneId])
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold">Activity</h1>
-          <p className="text-muted-foreground">Global feed with zone/plant/sensor filters</p>
+          <p className="text-muted-foreground">Global feed with zone and sensor filters</p>
         </div>
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -74,20 +69,6 @@ export default function ActivityPage() {
               {(zones ?? []).map((z) => (
                 <SelectItem key={z.id} value={z.id}>
                   {z.name} ({z.id})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={plantId} onValueChange={setPlantId}>
-            <SelectTrigger className="w-80">
-              <SelectValue placeholder="Plant" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All plants</SelectItem>
-              {(plants ?? []).map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.name} ({p.id})
                 </SelectItem>
               ))}
             </SelectContent>

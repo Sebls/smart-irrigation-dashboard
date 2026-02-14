@@ -27,7 +27,6 @@ export function IrrigationJobTable({ title = "Irrigation jobs", jobs }: Irrigati
               <TableHead>ID</TableHead>
               <TableHead>Scope</TableHead>
               <TableHead>Zone</TableHead>
-              <TableHead>Plant</TableHead>
               <TableHead>Action</TableHead>
               <TableHead>Duration (s)</TableHead>
               <TableHead>Status</TableHead>
@@ -55,16 +54,6 @@ export function IrrigationJobTable({ title = "Irrigation jobs", jobs }: Irrigati
                       <div className="flex items-center gap-2">
                         <span>{j.zone_id}</span>
                         <CopyToClipboardButton value={j.zone_id} label="ID" />
-                      </div>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {j.plant_id ? (
-                      <div className="flex items-center gap-2">
-                        <span>{j.plant_id}</span>
-                        <CopyToClipboardButton value={j.plant_id} label="ID" />
                       </div>
                     ) : (
                       "—"

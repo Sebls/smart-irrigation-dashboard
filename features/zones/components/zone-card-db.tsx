@@ -7,11 +7,10 @@ import type { Zone } from "@/lib/types"
 
 interface ZoneCardDbProps {
   zone: Zone
-  plantCount: number
   sensorCount: number
 }
 
-export function ZoneCardDb({ zone, plantCount, sensorCount }: ZoneCardDbProps) {
+export function ZoneCardDb({ zone, sensorCount }: ZoneCardDbProps) {
   return (
     <Link href={`/zones/${zone.id}`}>
       <Card className="group cursor-pointer transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5">
@@ -22,7 +21,6 @@ export function ZoneCardDb({ zone, plantCount, sensorCount }: ZoneCardDbProps) {
           </Badge>
         </CardHeader>
         <CardContent className="space-y-2">
-          <p className="text-xs text-muted-foreground">Plants: {plantCount}</p>
           <p className="text-xs text-muted-foreground">Sensors: {sensorCount}</p>
         </CardContent>
       </Card>

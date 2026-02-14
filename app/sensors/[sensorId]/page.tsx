@@ -4,7 +4,7 @@ import { use, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { DashboardLayout } from "@/layouts/dashboard/dashboard-layout"
-import { mockSensorsDb, mockSensorReadingsDbBySensorId, mockZones, MOCK_BASE_NOW } from "@/lib/mock-data"
+import { mockSensorsDb, mockSensorReadingsDbBySensorId, MOCK_BASE_NOW } from "@/lib/mock-data"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { SensorIdentityPanel } from "@/features/sensors/components/sensor-identity-panel"
@@ -52,34 +52,11 @@ export default function SensorDetailPage({ params }: SensorDetailPageProps) {
     }
   }, [sensorId, uuid])
 
-  const sensorFromDemo = useMemo(() => {
-    if (uuid) return null
-    return mockZones
-      .flatMap((z) => z.plants)
-      .flatMap((p) => p.sensors)
-      .find((s) => s.id === sensorId)
-  }, [sensorId, uuid])
-
   const sensorDb = useMemo(() => (uuid ? null : mockSensorsDb.find((s) => s.id === sensorId)), [sensorId, uuid])
 
   const sensor: Sensor | null = uuid
     ? sensorApi
     : sensorDb
-      ? sensorDb
-      : sensorFromDemo
-        ? {
-            id: sensorFromDemo.id,
-            name: sensorFromDemo.name,
-            type: "soil_humidity",
-            unit: "%",
-            is_active: true,
-            zone_id: null,
-            plant_id: sensorFromDemo.plantId,
-            created_at: MOCK_BASE_NOW,
-            updated_at: MOCK_BASE_NOW,
-            deleted_at: null,
-          }
-        : null
 
   // Keep hook order stable: only return after all hooks above ran.
   if (uuid && error) {
@@ -128,14 +105,7 @@ export default function SensorDetailPage({ params }: SensorDetailPageProps) {
   const readings: SensorReadingRecord[] = uuid
     ? readingsApi!
     : mockSensorReadingsDbBySensorId[sensorId] ??
-      (sensorFromDemo
-        ? sensorFromDemo.readings.map((r, idx) => ({
-            id: `${sensorId}-reading-${idx + 1}`,
-            sensor_id: sensorId,
-            recorded_at: r.timestamp,
-            value: r.value,
-          }))
-        : [])
+      []
 
   const latest =
     readings.slice().sort((a, b) => b.recorded_at.getTime() - a.recorded_at.getTime())[0] ?? null

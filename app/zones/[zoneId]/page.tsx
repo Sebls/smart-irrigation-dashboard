@@ -4,7 +4,6 @@ import { use, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { DashboardLayout } from "@/layouts/dashboard/dashboard-layout"
-import { PlantCard } from "@/features/zones/components/plant-card"
 import { mockZones } from "@/lib/mock-data"
 import { useMounted } from "@/composables/use-mounted"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,7 +12,6 @@ import { Button } from "@/components/ui/button"
 import {
   ArrowLeft,
   Droplets,
-  Leaf,
   Thermometer,
   Wind,
   Activity,
@@ -21,12 +19,11 @@ import {
   Power,
 } from "lucide-react"
 import { cn, formatDateTime, formatTimeAgo } from "@/lib/utils"
-import { ZonePlantsSection } from "@/features/zones/components/zone-plants-section"
 import { ZoneSensorsSection } from "@/features/zones/components/zone-sensors-section"
 import { CopyToClipboardButton } from "@/components/copy-to-clipboard-button"
 import { IrrigationJobTable } from "@/features/irrigation-jobs/components/irrigation-job-table"
 import { ActivityFeed } from "@/features/activity/components/activity-feed"
-import type { ActivityEvent, IrrigationJob, PlantEntity, Sensor, Zone } from "@/lib/types"
+import type { ActivityEvent, IrrigationJob, Sensor, Zone } from "@/lib/types"
 import { api } from "@/lib/api"
 
 interface ZoneDetailPageProps {
@@ -44,7 +41,6 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
   const mounted = useMounted()
 
   const [zoneDb, setZoneDb] = useState<Zone | null>(null)
-  const [plantsDb, setPlantsDb] = useState<PlantEntity[] | null>(null)
   const [sensorsDb, setSensorsDb] = useState<Sensor[] | null>(null)
   const [jobsDb, setJobsDb] = useState<IrrigationJob[] | null>(null)
   const [eventsDb, setEventsDb] = useState<ActivityEvent[] | null>(null)
@@ -55,15 +51,13 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
     let cancelled = false
     Promise.all([
       api.getZone(zoneId),
-      api.listPlants(),
       api.listSensors(),
       api.listIrrigationJobs({ zone_id: zoneId, limit: 500 }),
       api.listActivityEvents({ zone_id: zoneId, limit: 500 }),
     ])
-      .then(([z, plants, sensors, jobs, events]) => {
+      .then(([z, sensors, jobs, events]) => {
         if (cancelled) return
         setZoneDb(z)
-        setPlantsDb(plants.filter((p) => p.zone_id === z.id))
         setSensorsDb(sensors.filter((s) => s.zone_id === z.id))
         setJobsDb(jobs)
         setEventsDb(events)
@@ -72,7 +66,6 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
         if (cancelled) return
         setError(e instanceof Error ? e.message : String(e))
         setZoneDb(null)
-        setPlantsDb([])
         setSensorsDb([])
         setJobsDb([])
         setEventsDb([])
@@ -87,7 +80,7 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
     if (error && zoneDb === null) {
       notFound()
     }
-    if (zoneDb === null || plantsDb === null || sensorsDb === null || jobsDb === null || eventsDb === null) {
+    if (zoneDb === null || sensorsDb === null || jobsDb === null || eventsDb === null) {
       return (
         <DashboardLayout>
           <div className="space-y-6">
@@ -156,10 +149,7 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
             </CardContent>
           </Card>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <ZonePlantsSection plants={plantsDb} />
-            <ZoneSensorsSection sensors={sensorsDb} />
-          </div>
+          <ZoneSensorsSection sensors={sensorsDb} />
 
           <IrrigationJobTable title="Irrigation jobs (zone-scoped)" jobs={jobsDb} />
           <ActivityFeed events={eventsDb} />
@@ -200,7 +190,7 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
               </Badge>
             </div>
             <p className="text-muted-foreground">
-              Zone details and plant monitoring
+              Zone details and monitoring
             </p>
           </div>
           <Button className="bg-primary hover:bg-primary/90">
@@ -209,7 +199,7 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
           </Button>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardContent className="flex items-center gap-3 p-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -218,17 +208,6 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
               <div>
                 <p className="text-xs text-muted-foreground">Avg Humidity</p>
                 <p className="text-xl font-bold">{zoneDemo.avgHumidity}%</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-chart-1/10">
-                <Leaf className="h-5 w-5 text-chart-1" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Plants</p>
-                <p className="text-xl font-bold">{zoneDemo.plantCount}</p>
               </div>
             </CardContent>
           </Card>
@@ -267,28 +246,7 @@ export default function ZoneDetailPage({ params }: ZoneDetailPageProps) {
           </Card>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base font-medium">
-                  Plants in Zone ({zoneDemo.plants.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {zoneDemo.plants.map((plant) => (
-                    <PlantCard
-                      key={plant.id}
-                      plant={plant}
-                      zoneId={zoneDemo.id}
-                    />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
+        <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-6">
             <Card>
               <CardHeader>
