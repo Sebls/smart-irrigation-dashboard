@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Activity } from "lucide-react"
-import type { PlantEntity, Sensor, Zone } from "@/lib/types"
+import type { Sensor, Zone } from "@/lib/types"
 import { api } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -21,28 +21,24 @@ import { formatDateTime } from "@/lib/utils"
 
 export default function SensorsPage() {
   const [selectedZone, setSelectedZone] = useState<string>("all")
-  const [selectedPlant, setSelectedPlant] = useState<string>("all")
   const [selectedType, setSelectedType] = useState<string>("all")
 
   const [zones, setZones] = useState<Zone[] | null>(null)
-  const [plants, setPlants] = useState<PlantEntity[] | null>(null)
   const [sensors, setSensors] = useState<Sensor[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([api.listZones(), api.listPlants(), api.listSensors({ limit: 1000 })])
-      .then(([z, p, s]) => {
+    Promise.all([api.listZones(), api.listSensors({ limit: 1000 })])
+      .then(([z, s]) => {
         if (cancelled) return
         setZones(z)
-        setPlants(p)
         setSensors(s)
       })
       .catch((e) => {
         if (cancelled) return
         setError(e instanceof Error ? e.message : String(e))
         setZones([])
-        setPlants([])
         setSensors([])
       })
     return () => {
@@ -54,16 +50,6 @@ export default function SensorsPage() {
     return Object.fromEntries((zones ?? []).map((z) => [z.id, z]))
   }, [zones])
 
-  const plantById = useMemo(() => {
-    return Object.fromEntries((plants ?? []).map((p) => [p.id, p]))
-  }, [plants])
-
-  const filteredPlants = useMemo(() => {
-    const p = plants ?? []
-    if (selectedZone === "all") return p
-    return p.filter((row) => row.zone_id === selectedZone)
-  }, [plants, selectedZone])
-
   const types = useMemo(() => {
     const set = new Set((sensors ?? []).map((s) => s.type).filter(Boolean))
     return Array.from(set).sort()
@@ -73,9 +59,8 @@ export default function SensorsPage() {
     const rows = sensors ?? []
     return rows
       .filter((s) => (selectedZone === "all" ? true : s.zone_id === selectedZone))
-      .filter((s) => (selectedPlant === "all" ? true : s.plant_id === selectedPlant))
       .filter((s) => (selectedType === "all" ? true : s.type === selectedType))
-  }, [selectedPlant, selectedType, selectedZone, sensors])
+  }, [selectedType, selectedZone, sensors])
 
   const stats = useMemo(() => {
     const all = sensors ?? []
@@ -84,9 +69,8 @@ export default function SensorsPage() {
       totalSensors: all.length,
       activeSensors: active,
       zonesMonitored: (zones ?? []).length,
-      plantsTracked: (plants ?? []).length,
     }
-  }, [plants, sensors, zones])
+  }, [sensors, zones])
 
   return (
     <DashboardLayout>
@@ -94,7 +78,7 @@ export default function SensorsPage() {
         <div>
           <h1 className="text-2xl font-bold">Sensor Measurements</h1>
           <p className="text-muted-foreground">
-            Explore sensor data across zones and plants
+            Explore sensor data across zones
           </p>
         </div>
 
@@ -130,15 +114,7 @@ export default function SensorsPage() {
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="flex items-center gap-4 p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-chart-2/10" />
-              <div>
-                <p className="text-xs text-muted-foreground">Plants Tracked</p>
-                <p className="text-xl font-bold">{stats.plantsTracked}</p>
-              </div>
-            </CardContent>
-          </Card>
+          <div />
         </div>
 
         <Card>
@@ -157,19 +133,6 @@ export default function SensorsPage() {
                     {(zones ?? []).map((zone) => (
                       <SelectItem key={zone.id} value={zone.id}>
                         {zone.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={selectedPlant} onValueChange={setSelectedPlant}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Select plant" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Plants</SelectItem>
-                    {filteredPlants.map((plant) => (
-                      <SelectItem key={plant.id} value={plant.id}>
-                        {plant.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -212,14 +175,12 @@ export default function SensorsPage() {
                     <TableHead>Unit</TableHead>
                     <TableHead>Active</TableHead>
                     <TableHead>Zone</TableHead>
-                    <TableHead>Plant</TableHead>
                     <TableHead>Updated</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredSensors.map((sensor) => {
                     const zone = sensor.zone_id ? zoneById[sensor.zone_id] : null
-                    const plant = sensor.plant_id ? plantById[sensor.plant_id] : null
                     return (
                       <TableRow key={sensor.id}>
                         <TableCell className="font-mono text-xs">
@@ -243,9 +204,6 @@ export default function SensorsPage() {
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {zone ? zone.name : sensor.zone_id ?? "—"}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {plant ? plant.name : sensor.plant_id ?? "—"}
                         </TableCell>
                         <TableCell className="font-mono text-xs">{formatDateTime(sensor.updated_at)}</TableCell>
                       </TableRow>
